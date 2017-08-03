@@ -71,12 +71,21 @@ def tcplink(sock, addr,con):
         return
     succ = make_auth_succ()
     sock.send(succ)   
+    ptime = time.time()
     while True :
+       if time.time()-ptime > 300 :
+            print "timeout no heart"
+            return
        data = sock.recv(1024)
        if data[3]=='5A' :
            jqid = string(data[6:14])
            eids,eidstime = takeeids(data) 
            dealwithdb(jqid,eids,eidstime,con)
+
+       if data[3]=='50' :
+           ptime = time.time()
+           b = b"\xAA\x00\x06\x50\x01\xEE"
+           sock.send(b)
 
 def checkdb(con) :
     while True :
@@ -85,7 +94,7 @@ def checkdb(con) :
         results = cur.fetchall()
         for row in results:
             rowid = row[0]
-            cur.execute("update info set status = 0 where id = %d" % rowid)
+            cur.execute("insert into io(jqid,eid,time,status) values('%s','%s','%s',%d)" % (jqid,eids[i], time.strftime("%Y-%m-%d %X", time.localtime(eidstime[i])),0))
         con.commit()
         time.sleep(10)
 
@@ -95,9 +104,10 @@ def dealwithdb(jqid,eids,eidstime.con) :
         cur.execute("select * from info where jqid='%s' and eid='%s' " % (jqid,eids[i]))
         numrows = int(cur.rowcount)
         if numrows<=0 :
-            cur.execute("insert into info(jqid,eid,time,status) values('%s','%s','%s',%d)" % (jqid,eids[i], time.strftime("%Y-%m-%d %X", time.localtime(eidstime)),1))
+            cur.execute("insert into info(jqid,eid,time) values('%s','%s','%s',%d)" % (jqid,eids[i], time.strftime("%Y-%m-%d %X", time.localtime(eidstime[i]))))
+            cur.execute("insert into io(jqid,eid,time,status) values('%s','%s','%s',%d)" % (jqid,eids[i], time.strftime("%Y-%m-%d %X", time.localtime(eidstime[i])),1))
         else :
-            cur.execute("update info set time='%s' where jqid='%s' and eid='%s' " % (time.localtime(eidstime),jqid,eids[i])) 
+            cur.execute("update info set time='%s' where jqid='%s' and eid='%s' " % (time.localtime(eidstime[i]),jqid,eids[i])) 
     con.commit()
 
 def takeeids(data) :
@@ -117,7 +127,7 @@ def makebyte4toint(b) :
 
 if __name__ == "__main__" :
     try :
-        con = mdb.connect("localhost","root","root123root","info")
+        con = mdb.connect("localhost","root","root123root","debang")
     except Exception,e:  
             print Exception,":",e
 
