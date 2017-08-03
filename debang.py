@@ -10,6 +10,11 @@ import hashlib
 import time
 import string
 import MySQLdb as mdb
+import threading
+import sys
+import signal
+import os
+
 
 def make_auth_req():
     b = [] 
@@ -90,17 +95,20 @@ def tcplink(sock, addr,con):
 def checkdb(con) :
     while True :
         cur = con.cursor()
-        cur.execute("select id from info where unix_timestamp(time) < UNIX_TIMESTAMP(Now())-300")
+        cur.execute("select id,jqid,eid,time from info where unix_timestamp(time) < UNIX_TIMESTAMP(Now())-300")
         results = cur.fetchall()
         for row in results:
             rowid = row[0]
-            cur.execute("insert into io(jqid,eid,time,status) values('%s','%s','%s',%d)" % (jqid,eids[i], time.strftime("%Y-%m-%d %X", time.localtime(eidstime[i])),0))
+            jqid = row[1]
+            eid = row[2]
+            ttime = row[3]
+            cur.execute("insert into io(jqid,eid,time,status) values('%s','%s','%s',%d)" % (jqid,eid, ttime,0))
         con.commit()
         time.sleep(10)
 
-def dealwithdb(jqid,eids,eidstime.con) :
+def dealwithdb(jqid,eids,eidstime,con) :
     cur = con.cursor()
-    for i=0;i<len(eids);i++ :
+    for i in range(0,len(eids)) :
         cur.execute("select * from info where jqid='%s' and eid='%s' " % (jqid,eids[i]))
         numrows = int(cur.rowcount)
         if numrows<=0 :
@@ -114,7 +122,7 @@ def takeeids(data) :
     num = ord(data[4])*256+ord(data[5])
     eids = []
     eidstime = []
-    for i=0;i++;i<num :
+    for i in range(0,num) :
         eids.append(string(data[14+12*i:14+12*i+8*(i+1)]))
         eidstime.append(makebyte4toint(data[14+12*i+8*(i+1):14+12*i+8*(i+1)+4]))
     return eids ,eidstime
@@ -125,13 +133,19 @@ def makebyte4toint(b) :
 
 
 
+def myhandle(n=0,e=0) :
+    print "catch ctrl+c ,exit!"
+    #sys.exit()
+    os._exit(-1)
+
 if __name__ == "__main__" :
+    signal.signal(signal.SIGINT,myhandle)
     try :
         con = mdb.connect("localhost","root","root123root","debang")
     except Exception,e:  
             print Exception,":",e
 
-    t1 = thread.Thread(target=checkdb,arg=con)
+    t1 = threading.Thread(target=checkdb,args=(con,))
     t1.start()
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
