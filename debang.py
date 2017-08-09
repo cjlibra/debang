@@ -54,6 +54,7 @@ def tcplink(sock, addr,con):
     auth_req = make_auth_req()
     sock.send(auth_req)
     starttime = time.time()
+    data = ""
     while True :
         try :
             data = sock.recv(1024)
@@ -73,9 +74,13 @@ def tcplink(sock, addr,con):
                  return
             continue
         break
-        md5str = makemd5(data[4:20])
-    if auth_req[4:20] != md5str[0:16] :
-        print "md5 wrong\n"
+    print binascii.hexlify(auth_req)
+    md5str = makemd5(auth_req[4:20])
+    if data[4:20] != md5str[0:16] :
+        print "md5 wrong\no"
+        print binascii.hexlify(auth_req)
+        print "\n"
+        print binascii.hexlify(md5str)
         sock.close()
         return
     succ = make_auth_succ()
@@ -85,15 +90,23 @@ def tcplink(sock, addr,con):
        if time.time()-ptime > 300 :
             print "timeout no heart"
             return
-       data = sock.recv(1024)
-       if data[3]=='5A' :
+       try:
+           data = sock.recv(1024)
+           print binascii.hexlify(data)
+
+       except Exception ,e :
+           print "error sock1" , e
+           return
+       if data[3]=='\x5A' :
            jqid = string(data[6:14])
            eids,eidstime = takeeids(data) 
            dealwithdb(jqid,eids,eidstime,con)
 
-       if data[3]=='50' :
+       if data[3]=='\x50' :
+           print "50:"
+           print binascii.hexlify(data)
            ptime = time.time()
-           b = b"\xAA\x00\x06\x50\x01\xEE"
+           b = b"\xAA\x00\x06\x51\x01\xEE"
            sock.send(b)
 
 def checkdb(con) :
