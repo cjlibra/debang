@@ -55,7 +55,11 @@ def tcplink(sock, addr,con):
     sock.send(auth_req)
     starttime = time.time()
     while True :
-        data = sock.recv(1024)
+        try :
+            data = sock.recv(1024)
+        except Exception , e :
+            print "error sock", e
+            return
         if len(data) != 21 :
             if time.time()-starttime >= 10 :
                  print "timeout no auth_res\n"
@@ -150,9 +154,9 @@ if __name__ == "__main__" :
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # 监听端口:
-    s.bind(('127.0.0.1', 9999))
+    s.bind(('0.0.0.0', 9999))
     s.listen(5)
-    print 'Waiting for connection...'
+    print 'Waiting for connection...,port:9999'
     while True:
         # 接受一个新连接:
         sock, addr = s.accept()
