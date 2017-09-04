@@ -98,7 +98,7 @@ def tcplink(sock, addr,con):
            print "error sock1" , e
            return
        if data[3]=='\x5A' :
-           jqid = string(data[6:14])
+           jqid = (data[6:14])
            eids,eidstime = takeeids(data) 
            dealwithdb(jqid,eids,eidstime,con)
 
@@ -111,6 +111,7 @@ def tcplink(sock, addr,con):
 
 def checkdb(con) :
     while True :
+        con.ping(True)
         cur = con.cursor()
         cur.execute("select id,jqid,eid,time from info where unix_timestamp(time) < UNIX_TIMESTAMP(Now())-300")
         results = cur.fetchall()
@@ -129,10 +130,10 @@ def dealwithdb(jqid,eids,eidstime,con) :
         cur.execute("select * from info where jqid='%s' and eid='%s' " % (jqid,eids[i]))
         numrows = int(cur.rowcount)
         if numrows<=0 :
-            cur.execute("insert into info(jqid,eid,time) values('%s','%s','%s',%d)" % (jqid,eids[i], time.strftime("%Y-%m-%d %X", time.localtime(eidstime[i]))))
+            cur.execute("insert into info(jqid,eid,time) values('%s','%s','%s')" % (jqid,eids[i], time.strftime("%Y-%m-%d %X", time.localtime(eidstime[i]))))
             cur.execute("insert into io(jqid,eid,time,status) values('%s','%s','%s',%d)" % (jqid,eids[i], time.strftime("%Y-%m-%d %X", time.localtime(eidstime[i])),1))
         else :
-            cur.execute("update info set time='%s' where jqid='%s' and eid='%s' " % (time.localtime(eidstime[i]),jqid,eids[i])) 
+            cur.execute("update info set time='%s' where jqid='%s' and eid='%s' " % (time.strftime("%Y-%m-%d %X",time.localtime(eidstime[i])),jqid,eids[i])) 
     con.commit()
 
 def takeeids(data) :
@@ -140,7 +141,7 @@ def takeeids(data) :
     eids = []
     eidstime = []
     for i in range(0,num) :
-        eids.append(string(data[14+12*i:14+12*i+8*(i+1)]))
+        eids.append((data[14+12*i:14+12*i+8*(i+1)]))
         eidstime.append(makebyte4toint(data[14+12*i+8*(i+1):14+12*i+8*(i+1)+4]))
     return eids ,eidstime
 
