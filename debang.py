@@ -74,7 +74,7 @@ def tcplink(sock, addr,con):
                  return
             continue
         break
-    print binascii.hexlify(auth_req)
+    #print binascii.hexlify(auth_req)
     md5str = makemd5(auth_req[4:20])
     if data[4:20] != md5str[0:16] :
         print "md5 wrong\no"
@@ -103,8 +103,8 @@ def tcplink(sock, addr,con):
            dealwithdb(jqid,eids,eidstime,con)
 
        if data[3]=='\x50' :
-           print "50:"
-           print binascii.hexlify(data)
+           #print "50:"
+           #print binascii.hexlify(data)
            ptime = time.time()
            b = b"\xAA\x00\x06\x51\x01\xEE"
            sock.send(b)
@@ -146,7 +146,7 @@ def takeeids(data) :
     return eids ,eidstime
 
 def makebyte4toint(b) :
-    numint = ord(b[0])*256*3+ord(b[1])*256*2+ord(b[2])*256+ord(b[3])
+    numint = ord(b[0])*256*256*256+ord(b[1])*256*256+ord(b[2])*256+ord(b[3])
     return numint
 
 
