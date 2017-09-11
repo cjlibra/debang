@@ -121,6 +121,7 @@ def checkdb(con) :
             eid = row[2]
             ttime = row[3]
             cur.execute("insert into io(jqid,eid,time,status) values('%s','%s','%s',%d)" % (jqid,eid, ttime,0))
+            cur.execute("delete from info where jqid = '%s' and eid = '%s' " % (jqid,eid))
         con.commit()
         time.sleep(10)
 
