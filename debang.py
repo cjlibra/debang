@@ -55,7 +55,7 @@ def tcplink(sock, addr,con):
     sock.send(auth_req)
     starttime = time.time()
     data = ""
-    while True :
+    while 1 :
         try :
             data = sock.recv(1024)
         except Exception , e :
@@ -86,7 +86,7 @@ def tcplink(sock, addr,con):
     succ = make_auth_succ()
     sock.send(succ)   
     ptime = time.time()
-    while True :
+    while 1 :
        if time.time()-ptime > 300 :
             print "timeout no heart"
             return
@@ -100,7 +100,12 @@ def tcplink(sock, addr,con):
        if data[3]=='\x5A' :
            jqid = (data[6:14])
            eids,eidstime = takeeids(data) 
-           dealwithdb(jqid,eids,eidstime,con)
+           try :
+               dealwithdb(jqid,eids,eidstime,con)
+           except Exception , e:
+               print e
+               con.close()
+               con = mdb.connect(host = "127.0.0.1",port = 3306,user = "root",passwd = "root123root",db = "debang")
 
        if data[3]=='\x50' :
            #print "50:"
@@ -157,10 +162,37 @@ def myhandle(n=0,e=0) :
     #sys.exit()
     os._exit(-1)
 
+
+def modify_buff_size():
+        SEND_BUF_SIZE = 4096
+        RECV_BUF_SIZE = 4096
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        bufsize = sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+
+        print "Buffer size [Before] :%d" %bufsize
+
+        sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+
+        sock.setsockopt(
+            socket.SOL_SOCKET,
+            socket.SO_SNDBUF,
+            SEND_BUF_SIZE
+            )
+        sock.setsockopt(
+                socket.SOL_SOCKET,
+                socket.SO_RCVBUF,
+                RECV_BUF_SIZE
+             )
+
+        bufsize = sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+        print "Buffer size [After] :%d" %bufsize
+        return sock
+
 if __name__ == "__main__" :
     signal.signal(signal.SIGINT,myhandle)
     try :
-        con = mdb.connect("localhost","root","root123root","debang")
+        con = mdb.connect(host = "127.0.0.1",port = 3306,user = "root",passwd = "root123root",db = "debang")
     except Exception,e:  
             print Exception,":",e
 
@@ -168,6 +200,7 @@ if __name__ == "__main__" :
     t1.start()
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   # s =  modify_buff_size()
     # 监听端口:
     s.bind(('0.0.0.0', 9999))
     s.listen(5)
