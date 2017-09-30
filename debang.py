@@ -116,6 +116,7 @@ def tcplink(sock, addr,con):
 
 def checkdb(con) :
     while True :
+        print "checkdbing..."
         con.ping(True)
         cur = con.cursor()
         cur.execute("select id,jqid,eid,time from info where unix_timestamp(time) < UNIX_TIMESTAMP(Now())-60")
@@ -127,6 +128,7 @@ def checkdb(con) :
             ttime =  time.strftime("%Y-%m-%d %X", time.localtime()) 
             cur.execute("insert into io(jqid,eid,time,status) values('%s','%s','%s',%d)" % (jqid,eid, ttime,0))
             cur.execute("delete from info where jqid = '%s' and eid = '%s' " % (jqid,eid))
+            print eid
         con.commit()
         time.sleep(6)
 
